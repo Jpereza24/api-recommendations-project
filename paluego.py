@@ -1,8 +1,3 @@
-@post('/user/create')
-def userCreation(username):
-    ''' Insertas un username y te devuelve el user_id'''
-    return user_id
-
 @get('/chat/create')
 def chatCreation(array):
     '''Crear un chat en el que cargar mensajes, hay que meter un array de user_ids'''

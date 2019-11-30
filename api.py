@@ -5,18 +5,21 @@ import dns
 import requests
 from src import mongo as m
 
-@route("/data")
-def data():
+@route("/total")
+def index():
     return dumps(coll.find())
 
+@post('/user/create')
+def createuser():
+    name = str(request.forms.get("name"))
+    new_id = coll.distinct("idUser")[-1] + 1
+    new_user = {
+        "idUser":new_id,
+        "userName":name
+    }
+    coll.insert_one(new_user)
 
 
-
-@post('/createuser/<username>')
-#def createuser(username):
-    #''' Insertas un username y te devuelve el user_id'''
-
-    #return user_id
 
 db, coll = m.connectCollection('apiproject', 'chats')
 run(host="0.0.0.0", port=8080, debug=True)
