@@ -2,10 +2,12 @@ from pymongo import MongoClient
 import getpass
 import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 #Get Password
 password = getpass.getpass("Insert your AtlasMongoDB Mohusty password: ")
-connection = "mongodb+srv://Mohusty:{}@api-project-6exv8.mongodb.net/test?retryWrites=true&w=majority".format(password)
+connection = os.getenv("mongoURL")
 
 #Connect to DB
 client = MongoClient(connection)
