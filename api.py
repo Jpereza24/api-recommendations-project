@@ -15,12 +15,7 @@ def getMessages():
 
 @get("/users")
 def getUsers():
-    lista = []
-    ids = dumps(coll.distinct("idUser"))
-    users = dumps(coll.distinct("userName"))
-    lista.append(ids)
-    lista.append(users)
-    return lista
+    return dumps(coll.distinct('idUser','userName'))
 
 @post('/user/create')
 def createuser():
@@ -32,7 +27,7 @@ def createuser():
     }
     coll.insert_one(new_user)
 
-@post('/chat/<chat_id>//addmessage')
+@post('/chat/<chat_id>/addmessage')
 def createMessage(chat_id):
     db1, coll1 = mc.connectCollection('apiproject','chats')
     user = dumps(coll1.find({"idChat":int(chat_id)},{"idUser":1,"userName":1}))
