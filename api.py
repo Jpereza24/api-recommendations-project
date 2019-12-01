@@ -3,11 +3,24 @@ from bson.json_util import dumps
 import json
 import dns
 import requests
-from src import mongo as m
+from src import mongo_connection as mc
 
-@route("/total")
+@route("/")
 def index():
     return dumps(coll.find())
+
+@get("/messages")
+def getMessages():
+    return dumps(coll.find({}, {"text": 1}))
+
+@get("/users")
+def getUsers():
+    lista = []
+    ids = dumps(coll.distinct("idUser"))
+    users = dumps(coll.distinct("userName"))
+    lista.append(ids)
+    lista.append(users)
+    return lista
 
 @post('/user/create')
 def createuser():
@@ -19,16 +32,26 @@ def createuser():
     }
     coll.insert_one(new_user)
 
-@post('chat/<chat_id>/addmessage')
+@post('/chat/<chat_id>//addmessage')
 def createMessage(chat_id):
+    db1, coll1 = mc.connectCollection('apiproject','chats')
+    user = dumps(coll1.find({"idChat":int(chat_id)},{"idUser":1,"userName":1}))
+    
     message = str(request.forms.get("message"))
     new_id = coll.distinct("idMessage")[-1] + 1
     new_message = {
-        "idChat": chat_id,
+        "idUser":idUser,
+        "userName": username,
+        "idChat": int(chat_id),
         "idMessage":new_id,
         "text" : message
     }
     coll.insert_one(new_message)
 
-db, coll = m.connectCollection('apiproject', 'chats')
+
+
+
+
+
+db, coll = mc.connectCollection('apiproject', 'chats')
 run(host="0.0.0.0", port=8080, debug=True)
