@@ -18,6 +18,6 @@ def connectCollection(database, collection):
 
 db, coll = connectCollection('apiproject','chats')
 
-with open('chats.json') as f:
+with open('../Input/chats.json') as f:
     chats_json = json.load(f)
 coll.insert_many(chats_json)
