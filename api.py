@@ -27,7 +27,7 @@ def createuser():
     datauser, user = mc.connectCollection("apiproject","users")
     registro = list(user.aggregate([{'$project':{'userName':1}}]))
     name = str(request.forms.get("name"))
-    new_id = user.distinct("idUser")[-1] + 1
+    new_id = max(user.distinct("idUser")) + 1
     new_user = {
         "idUser":new_id,
         "userName":name
@@ -41,37 +41,28 @@ def createuser():
 @post('/chat/<chat_id>/addmessage')
 def createMessage(chat_id):
     datauser, user = mc.connectCollection("apiproject","users")
+    idUser = max(user.distinct('idUser')) +1
     regis = list(user.aggregate([{'$project':{'userName':1, 'idUser':1,'_id':0}}]))
     name = str(request.forms.get("name"))
     message = str(request.forms.get("message"))
-    new_id = coll.distinct("idMessage")[-1] + 1
+    new_id = max(coll.distinct("idMessage"))+ 1
+    for l in regis:
+        if l['userName']==name:
+            idUser = l['idUser']
     new_message = {
-        "idUser":0,
+        "idUser":idUser,
         "userName": name,
         "idChat": int(chat_id),
         "idMessage":new_id,
         "text" : message
     }
     new_user = {
-        "idUser":0,
+        "idUser":idUser,
         "userName":name
     }
-    for i in range(len(regis)):
-        if regis[i]['userName']==name:
-            new_message['idUser'] = regis[i]['idUser']
-            new_message['userName']=name
-        else:
-            new_message['idUser'] = user.distinct("idUser")[-1] +1
-            new_message['userName'] = name
-            new_user['idUser'] = user.distinct("idUser")[-1] +1
-            new_user['userName'] = name
-    user.insert_one(new_user)
+    if name not in [e['userName'] for e in regis]:
+        user.insert_one(new_user)
     coll.insert_one(new_message)
-
-
-
-
-
 
 db, coll = mc.connectCollection('apiproject', 'chats')
 run(host="0.0.0.0", port=8080, debug=True)
