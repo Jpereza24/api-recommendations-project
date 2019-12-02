@@ -23,29 +23,49 @@ def getUsers():
 
 @post('/user/create')
 def createuser():
-    """You can create a new user to upload to the DB"""
+    """You can create a new user to upload to the DB users """
+    datauser, user = mc.connectCollection("apiproject","users")
+    registro = list(user.aggregate([{'$project':{'userName':1}}]))
     name = str(request.forms.get("name"))
-    new_id = coll.distinct("idUser")[-1] + 1
+    new_id = user.distinct("idUser")[-1] + 1
     new_user = {
         "idUser":new_id,
         "userName":name
     }
-    coll.insert_one(new_user)
+    if name in [e['userName'] for e in registro]:
+        print("Error! That user is already created")
+    else:
+        user.insert_one(new_user)
+        print(f"New user created with name {name} and id {new_id}")
 
 @post('/chat/<chat_id>/addmessage')
 def createMessage(chat_id):
-    db1, coll1 = mc.connectCollection('apiproject','chats')
-    user = dumps(coll1.find({"idChat":int(chat_id)},{"idUser":1,"userName":1}))
-    
+    datauser, user = mc.connectCollection("apiproject","users")
+    regis = list(user.aggregate([{'$project':{'userName':1, 'idUser':1,'_id':0}}]))
+    name = str(request.forms.get("name"))
     message = str(request.forms.get("message"))
     new_id = coll.distinct("idMessage")[-1] + 1
     new_message = {
-        "idUser":idUser,
-        "userName": username,
+        "idUser":0,
+        "userName": name,
         "idChat": int(chat_id),
         "idMessage":new_id,
         "text" : message
     }
+    new_user = {
+        "idUser":0,
+        "userName":name
+    }
+    for i in range(len(regis)):
+        if regis[i]['userName']==name:
+            new_message['idUser'] = regis[i]['idUser']
+            new_message['userName']=name
+        else:
+            new_message['idUser'] = user.distinct("idUser")[-1] +1
+            new_message['userName'] = name
+            new_user['idUser'] = user.distinct("idUser")[-1] +1
+            new_user['userName'] = name
+    user.insert_one(new_user)
     coll.insert_one(new_message)
 
 
