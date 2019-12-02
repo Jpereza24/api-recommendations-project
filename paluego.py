@@ -7,8 +7,3 @@ def chatCreation(array):
 def userChat(user_id):
     '''Añade un usuario a un chat'''
     return chat_id
-
-@get('chat/<chat_id>/sentiment')
-def getSentiment(chat_id):
-    '''Pones un chat_id y te devuelve el ratio de sentimientos de los mensajes en ese chat'''
-    return sentiment
