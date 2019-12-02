@@ -6,6 +6,12 @@ import requests
 from src import mongo_connection as mc
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from src import user_text as ut
+import pandas as pd
+import re
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity as distance
+import numpy as np
 
 @route("/")
 def index():
@@ -25,11 +31,7 @@ def getUsers():
 @get("/users/messages")
 def userMessages():
     """This function returns all the messages for each user"""
-    registro = list(user.aggregate([{'$project':{'userName':1,'_id':0}}]))
-    messages_user = []
-    for dicc in registro:
-        messages_user.append({'userName':dicc['userName'], 'messages': list(coll.find({'userName':dicc['userName']},{'text':1,'_id':0}))})
-    return json.dumps(messages_user)
+    return dumps(coll.find({},{'userName':1,"text":1,'_id':0}))
 
 @post('/user/create')
 def createuser():
@@ -88,6 +90,20 @@ def getSentiment(chat_id):
             "Compound": sum(e['compound'] for e in sentiment)/len(sentiment)
     }}
     return average_sentiment
+
+@get('/user/<userName>/recommend')
+def recommendation(userName):
+    query = list(coll.find({},{'userName':1,"text":1,'_id':0}))
+    diccionario = ut.user_text(query)
+    count_vectorizer = CountVectorizer(stop_words='english')
+    sparse_matrix = count_vectorizer.fit_transform(diccionario.values())
+    doc_term_matrix = sparse_matrix.todense()
+    df = pd.DataFrame(doc_term_matrix,columns = count_vectorizer.get_feature_names(),index=diccionario.keys())
+    similarity_matrix = distance(df, df)
+    sim_df = pd.DataFrame(similarity_matrix, columns=diccionario.keys(), index=diccionario.keys())
+    np.fill_diagonal(sim_df.values, 0)
+    recommended = list(sim_df.sort_values(by=userName, ascending = False).index[0:3])
+    return json.dumps(recommended)
 
 db, coll = mc.connectCollection('apiproject', 'chats')
 datauser, user = mc.connectCollection('apiproject', 'users')
