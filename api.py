@@ -4,6 +4,8 @@ import json
 import dns
 import requests
 from src import mongo_connection as mc
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 @route("/")
 def index():
@@ -15,7 +17,6 @@ def getMessages(chat_id):
     """You can get the list of messages from the chat you select"""
     return dumps(coll.find({'idChat':int(chat_id)}, {"userName":1,"text": 1,"_id":0}))
     
-
 @get("/users")
 def getUsers():
     """You can get the list of all the users of the DB with their user_id associated"""
@@ -40,6 +41,7 @@ def createuser():
 
 @post('/chat/<chat_id>/addmessage')
 def createMessage(chat_id):
+    """This function adds a message to the chat that you choose, also it checks if the person who talks is an existing user or a new user"""
     datauser, user = mc.connectCollection("apiproject","users")
     idUser = max(user.distinct('idUser')) +1
     regis = list(user.aggregate([{'$project':{'userName':1, 'idUser':1,'_id':0}}]))
@@ -63,6 +65,19 @@ def createMessage(chat_id):
     if name not in [e['userName'] for e in regis]:
         user.insert_one(new_user)
     coll.insert_one(new_message)
+
+@get('/<chat_id>/sentiment')
+def getSentiment(chat_id):
+    query = list(coll.find({'idChat':int(chat_id)}, {"userName":1,"text": 1,"_id":0}))
+    texts = [e['text'] for e in query]
+    sid = SentimentIntensityAnalyzer()
+    sentiment = [sid.polarity_scores(string) for string in texts]
+    average_sentiment = {
+        "Negativity": sum(e['neg'] for e in sentiment)/len(sentiment),
+        "Neutral": sum(e['neu'] for e in sentiment)/len(sentiment),
+        "Positivity": sum(e['pos'] for e in sentiment)/len(sentiment) 
+    }
+    return average_sentiment
 
 db, coll = mc.connectCollection('apiproject', 'chats')
 run(host="0.0.0.0", port=8080, debug=True)
